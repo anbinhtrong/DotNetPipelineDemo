@@ -9,11 +9,39 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  buildConfiguration: 'Release'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+jobs:
+- job: BuildDotNetAlpine
+  displayName: 'Build C# Project (Alpine)'
+  container: mcr.microsoft.com/dotnet/sdk:9.0-alpine
+
+  steps:
+  - script: dotnet restore
+    displayName: '1. Restore Dependencies'
+    # Specify the directory containing your .csproj file
+    workingDirectory: 'HelloWorldApp'
+
+  # 2. Build the C# Application
+  - script: dotnet build --configuration $(buildConfiguration) --no-restore
+    displayName: '2. Build Project'
+    # '--no-restore' ensures we use the packages restored in the previous step
+    workingDirectory: 'HelloWorldApp'
+    
+  # 3. Publish (Compile output files to a ready-to-deploy folder)
+  - task: DotNetCoreCLI@2
+    displayName: '3. Publish Application'
+    inputs:
+      command: 'publish'
+      publishWebProjects: false 
+      projects: 'HelloWorldApp/HelloWorldApp.csproj'
+      # The output path, $(Build.ArtifactStagingDirectory), is the temp location for Artifacts
+      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+      
+  # 4. Upload the Artifact
+  - task: PublishBuildArtifacts@1
+    displayName: '4. Upload Artifact: drop'
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)' # Source folder
+      artifactName: 'drop' # Name of the artifact
