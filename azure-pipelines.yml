@@ -14,8 +14,8 @@ variables:
 
 jobs:
 - job: BuildDotNetAlpine
-  displayName: 'Build C# Project (Alpine)'
-  container: mcr.microsoft.com/dotnet/sdk:9.0-alpine
+  displayName: 'Build C# Project (Debian/Ubuntu image)'
+  container: mcr.microsoft.com/dotnet/sdk:9.0
 
   steps:
   - script: dotnet restore
